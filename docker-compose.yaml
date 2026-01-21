@@ -1,0 +1,30 @@
+# nginx proxy address - http://172.17.0.1:8080
+
+name: scrutiny
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny-app
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+    ports:
+      - '172.17.0.1:8080:8080'
+    volumes:
+      - './rootfs/data/scrutiny:/data'
+    networks:
+      - scrutiny
+
+networks:
+  scrutiny:
+    name: scrutiny
+    external: false
