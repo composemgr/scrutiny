@@ -20,7 +20,7 @@ services:
     ports:
       - '172.17.0.1:8080:8080'
     volumes:
-      - './rootfs/data/scrutiny:/data'
+      - './volumes/data/scrutiny:/data'
     networks:
       - scrutiny
 
