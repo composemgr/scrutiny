@@ -45,7 +45,7 @@ See `docker-compose.yaml` for complete list of configurable options.
 
 ## 📂 Volumes
 
-- `./rootfs/data/scrutiny` - Data storage
+- `./volumes/data/scrutiny` - Data storage
 
 ## 🔍 Logging
 
