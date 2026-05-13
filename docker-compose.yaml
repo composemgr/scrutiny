@@ -15,6 +15,9 @@ services:
     restart: always
     pull_policy: always
     logging: *default-logging
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: scrutiny-app
@@ -22,7 +25,9 @@ services:
     ports:
       - '172.17.0.1:8080:8080'
     volumes:
-      - './volumes/data/scrutiny:/data'
+      - './volumes/config/scrutiny:/opt/scrutiny/config'
+      - './volumes/data/scrutiny:/opt/scrutiny/influxdb'
+      - '/run/udev:/run/udev:ro'
     networks:
       - scrutiny
       - proxy
