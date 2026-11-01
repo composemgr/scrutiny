@@ -1,4 +1,4 @@
-# nginx proxy address - http://172.17.0.1:8080
+# nginx proxy address - http://172.17.0.1:64337
 
 name: scrutiny
 x-logging: &default-logging
@@ -11,49 +11,28 @@ services:
   app:
     image: ghcr.io/analogj/scrutiny:master-omnibus
     container_name: scrutiny-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
     hostname: ${BASE_HOST_NAME:-$HOSTNAME}
     restart: always
     pull_policy: always
     logging: *default-logging
-    cap_add:
-      - SYS_RAWIO
-      - SYS_ADMIN
     environment:
       TZ: ${TZ:-America/New_York}
       CONTAINER_NAME: scrutiny-app
       HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
     ports:
-      - '172.17.0.1:8080:8080'
+      - '172.17.0.1:64337:8080'
     volumes:
-      - './volumes/config/scrutiny:/opt/scrutiny/config'
-      - './volumes/data/scrutiny:/opt/scrutiny/influxdb'
+      - './volumes/config/scrutiny:/opt/scrutiny/config:z'
+      - './volumes/data/scrutiny:/opt/scrutiny/influxdb:z'
       - '/run/udev:/run/udev:ro'
     networks:
       - scrutiny
-      - proxy
-      - cloudflare
-    labels:
-      - 'traefik.enable=true'
-      - 'cloudflare.enable=true'
-      - 'traefik.docker.network=proxy'
-      - 'cloudflare.service=http://scrutiny-app:8080'
-      - 'cloudflare.hostname=scrutiny.${CLOUDFLARE_ZONE_NAME:-}'
-      - 'traefik.http.routers.scrutiny-app.entrypoints=http'
-      - 'traefik.http.routers.scrutiny-app-secure.tls=true'
-      - 'traefik.http.routers.scrutiny-app.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.middlewares.scrutiny-app-https-redirect.redirectscheme.scheme=https'
-      - 'traefik.http.routers.scrutiny-app.middlewares=scrutiny-app-https-redirect'
-      - 'traefik.http.routers.scrutiny-app-secure.entrypoints=https'
-      - 'traefik.http.routers.scrutiny-app-secure.rule=Host($(${BASE_HOST_NAME:-$HOSTNAME}))'
-      - 'traefik.http.routers.scrutiny-app-secure.tls.certresolver=cloudflare'
-      - 'traefik.http.routers.scrutiny-app-secure.service=scrutiny-app'
-      - 'traefik.http.services.scrutiny-app.loadbalancer.server.port=8080'
 
 networks:
   scrutiny:
     name: scrutiny
     external: false
-  proxy:
-    external: true
-  cloudflare:
-    external: true

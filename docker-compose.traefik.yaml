@@ -1,0 +1,50 @@
+
+name: scrutiny
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: scrutiny-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    volumes:
+      - './volumes/config/scrutiny:/opt/scrutiny/config:z'
+      - './volumes/data/scrutiny:/opt/scrutiny/influxdb:z'
+      - '/run/udev:/run/udev:ro'
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=traefik'
+      - 'traefik.http.routers.scrutiny-app.entrypoints=http'
+      - 'traefik.http.routers.scrutiny-app.rule=Host(${BASE_HOST_NAME:-$HOSTNAME})'
+      - 'traefik.http.routers.scrutiny-app.middlewares=scrutiny-app-https-redirect'
+      - 'traefik.http.middlewares.scrutiny-app-https-redirect.redirectscheme.scheme=https'
+      - 'traefik.http.routers.scrutiny-app-secure.entrypoints=https'
+      - 'traefik.http.routers.scrutiny-app-secure.rule=Host(${BASE_HOST_NAME:-$HOSTNAME})'
+      - 'traefik.http.routers.scrutiny-app-secure.tls.certresolver=cloudflare'
+      - 'traefik.http.routers.scrutiny-app-secure.service=scrutiny-app'
+      - 'traefik.http.services.scrutiny-app.loadbalancer.server.port=8080'
+    networks:
+      - scrutiny
+      - traefik
+
+networks:
+  scrutiny:
+    name: scrutiny
+    external: false
+  traefik:
+    external: true

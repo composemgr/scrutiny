@@ -1,0 +1,42 @@
+
+name: scrutiny
+x-logging: &default-logging
+  options:
+    max-size: '5m'
+    max-file: '1'
+  driver: json-file
+
+services:
+  app:
+    image: ghcr.io/analogj/scrutiny:master-omnibus
+    container_name: scrutiny-app
+    domainname: ${BASE_DOMAIN_NAME:-example.com}
+    hostname: ${BASE_HOST_NAME:-$HOSTNAME}
+    restart: always
+    pull_policy: always
+    logging: *default-logging
+    environment:
+      TZ: ${TZ:-America/New_York}
+      CONTAINER_NAME: scrutiny-app
+      HOSTNAME: ${BASE_HOST_NAME:-$HOSTNAME}
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    volumes:
+      - './volumes/config/scrutiny:/opt/scrutiny/config:z'
+      - './volumes/data/scrutiny:/opt/scrutiny/influxdb:z'
+      - '/run/udev:/run/udev:ro'
+    labels:
+      - 'cloudflare.enable=true'
+      - 'cloudflare.service=http://scrutiny-app:8080'
+      - 'cloudflare.hostname=${BASE_HOST_NAME:-$HOSTNAME}'
+    networks:
+      - scrutiny
+      - cloudflare
+
+networks:
+  scrutiny:
+    name: scrutiny
+    external: false
+  cloudflare:
+    external: true

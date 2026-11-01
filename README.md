@@ -1,10 +1,10 @@
 ## 👋 Welcome to scrutiny 🚀
 
-Hard drive monitoring with S.M.A.R.T metrics
+Hard drive S.M.A.R.T. health monitoring dashboard
 
 ## 📋 Description
 
-Hard drive monitoring with S.M.A.R.T metrics
+Hard drive S.M.A.R.T. health monitoring dashboard
 
 ## 🚀 Services
 
@@ -21,7 +21,8 @@ curl -q -LSsf "https://raw.githubusercontent.com/composemgr/scrutiny/main/docker
 ```bash
 git clone "https://github.com/composemgr/scrutiny" ~/.local/srv/docker/scrutiny
 cd ~/.local/srv/docker/scrutiny
-docker compose up -d
+cp default.env .env
+docker compose --env-file .env up -d
 ```
 
 ### Option 3: Using composemgr
@@ -35,41 +36,86 @@ composemgr install scrutiny
 
 ```shell
 TZ=America/New_York
+APP_ORG_NAME=Scrutiny
 ```
 
 See `docker-compose.yaml` for complete list of configurable options.
 
+### Environment Files
+
+`default.env.sample` holds the full set of variables and is copied to `.env`
+before starting the stack:
+
+```bash
+cp default.env .env
+docker compose --env-file .env up -d
+```
+
+`app.env.sample` holds the app-specific overrides and is copied to `app.env`:
+
+```bash
+cp app.env.sample app.env
+```
+
+`composemgr up` applies `app.env` and `default.env` automatically. Raw
+`docker compose` commands need `--env-file .env` to pick up the same values.
+
+### Reverse Proxy
+
+Three standalone compose files ship in this repo:
+
+| File | Use |
+|------|-----|
+| `docker-compose.yaml` | Default, published on `172.17.0.1:64337` |
+| `docker-compose.traefik.yaml` | Behind an existing external `traefik` network |
+| `docker-compose.tunnel.yaml` | Behind an existing external `cloudflare` tunnel network |
+
+```bash
+docker compose -f docker-compose.traefik.yaml --env-file .env up -d
+```
+
 ## 🌐 Access
 
-- **Web Interface**: http://172.17.0.1:8080
+- **Web Interface**: http://172.17.0.1:64337
 
 ## 📂 Volumes
 
-- `./volumes/data/scrutiny` - Data storage
+- `./volumes/config/scrutiny` - Scrutiny web configuration
+- `./volumes/data/scrutiny` - InfluxDB metrics database
+- `/run/udev` - Host udev device rules, mounted read-only for S.M.A.R.T. access
+## 🔐 Security
+
+- Change all default passwords before deploying to production
+- Use strong secrets for all authentication tokens
+- Configure HTTPS using a reverse proxy (nginx, traefik, caddy)
+- Regularly update Docker images for security patches
+- Backup your data regularly
+The container runs with SYS_ADMIN and SYS_RAWIO and mounts /run/udev read-only so it can read S.M.A.R.T. data - only run it on a host you trust
+The image is tagged master-omnibus, which tracks the development branch; pin a release tag for production
 
 ## 🔍 Logging
 
 ```shell
-docker compose logs -f app
+docker compose --env-file .env logs -f app
 ```
 
 ## 🛠️ Management
 
 ```bash
 # Start services
-docker compose up -d
+docker compose --env-file .env up -d
 
 # Stop services
-docker compose down
+docker compose --env-file .env down
 
 # Update to latest images
-docker compose pull && docker compose up -d
+docker compose --env-file .env pull && docker compose --env-file .env up -d
 
 # View logs
-docker compose logs -f
+docker compose --env-file .env logs -f
 
 # Restart services
-docker compose restart
+docker compose --env-file .env restart
 ```
 
 ## 📋 Requirements
